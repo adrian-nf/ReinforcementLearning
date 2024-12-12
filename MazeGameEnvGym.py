@@ -3,10 +3,13 @@ import matplotlib.pyplot as plt
 import copy
 from matplotlib.animation import FuncAnimation
 from matplotlib import rc
+import gymnasium as gym
+from gymnasium import spaces
 
 rc('animation', html='jshtml')
-class MazeGameEnv():
-    def __init__(self, board=[['😊', ' ', '😺'],[' ', ' ', ' '],['😺', ' ', '😍']], actions=["up", "down", "left", "right"], actions_moves=[(0,-1),(0,1),(-1,0),(1,0)], values={'': -1, ' ': -1, '😍': 100, '😺': 20}, player="😊", goal="😍"):
+class MazeGameEnv(gym.Env):
+    def __init__(self, board=[['😊', ' ', '😺'],[' ', ' ', ' '],['😺', ' ', '😍']], actions=["up", "down", "left", "right"], actions_moves=[(0,-1),(0,1),(-1,0),(1,0)], values={'': -1, ' ': -1, '😍': 100, '😺': 20, '😊':0}, player="😊", goal="😍", render_mode=None):
+        super(MazeGameEnv, self).__init__()
         self.board = board
         self.actions = actions
         self.actions_moves = actions_moves
@@ -17,19 +20,29 @@ class MazeGameEnv():
         self.board_history = []
         self.board_history.append(copy.deepcopy(self.board))
         self.original_board = [row.copy() for row in self.board]
+        self.board_size = (len(self.board), len(self.board[0]))
 
+        self.action_space = spaces.Discrete(len(self.actions))
+        self.observation_space = spaces.Box(low=-10, high=100, shape=self.board_size, dtype=np.int32)
+
+    def get_numeric_board(self):
+        return np.array(
+            [[self.values[cell] for cell in row] for row in self.board],
+            dtype=np.float32
+        )
+    
     def get_pos(self, value):
         for i in range(len(self.board)):
             for j in range(len(self.board[0])):
                 if value in self.board[i][j]:
                     return (i, j)
 
-    def reset(self):
+    def reset(self, seed=None, options=None):
         self.board = [row.copy() for row in self.original_board]
         self.goal_position = self.get_pos(self.goal)
         self.board_history = []
         self.board_history.append(copy.deepcopy(self.board))
-        return self.get_pos(self.player)
+        return self.get_numeric_board(), {}
 
     def is_finish(self):
         pass
@@ -57,10 +70,11 @@ class MazeGameEnv():
         return self.values[self.board[state[0]][state[1]]]
     
     def step(self, action):
+        truncated = False # Truncated not implemented always False
         state = self.get_pos(self.player)
         if not self.is_valid_move(state, action):
-            print("Not valid move")
-            return 
+            #print("Not valid move")
+            return self.get_numeric_board(), -10, truncated, truncated,{}
         
         x, y = state
         move_x, move_y = self.actions_moves[action]
@@ -75,7 +89,7 @@ class MazeGameEnv():
             done = True
 
         self.board_history.append(copy.deepcopy(self.board))
-        return self.get_pos(self.player), reward, done
+        return self.get_numeric_board(), reward, done, truncated,{}
 
     def render(self):
         fig, ax = plt.subplots()
