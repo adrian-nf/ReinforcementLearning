@@ -7,7 +7,7 @@ This repository contains reinforcement learning environments and algorithms. The
 
 The following RL algorithms are implemented:
 
-- **DummyAgent**: Is a simple agent that takes random actions in the environment without learning or adapting
+- **DummyAgent**: Is a simple agent that takes random actions in the environment without learning or adapting.
 - **QLearning**: Q-learning algorithm implemented.
 - **DQN**: Deep Q-Network implemented using Gymnasium environment.
 
